@@ -25,16 +25,19 @@ async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     clients.append(websocket)
     try:
-        cap = cv2.VideoCapture(0)
         net = cv2.dnn.readNetFromCaffe(
             "models/deploy.prototxt",
             "models/res10_300x300_ssd_iter_140000.caffemodel"
         )
 
         while True:
-            ret, frame = cap.read()
-            if not ret:
-                break
+            data = await websocket.receive_json()
+            frame_data = data.get("image")
+            if frame_data is None:
+                continue
+
+            nparr = np.frombuffer(base64.b64decode(frame_data), np.uint8)
+            frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
             (h, w) = frame.shape[:2]
             blob = cv2.dnn.blobFromImage(cv2.resize(frame, (300, 300)), 1.0,
@@ -70,8 +73,8 @@ async def websocket_endpoint(websocket: WebSocket):
         print(f"Error: {e}")
     finally:
         clients.remove(websocket)
-        cap.release()
         await websocket.close()
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
