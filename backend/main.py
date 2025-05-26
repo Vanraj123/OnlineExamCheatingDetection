@@ -68,7 +68,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 "alert": alert
             })
 
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0.3) 
     except Exception as e:
         print(f"Error: {e}")
     finally:
